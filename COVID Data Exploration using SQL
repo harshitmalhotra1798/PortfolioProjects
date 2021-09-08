@@ -1,0 +1,87 @@
+-- In this project we use SQL Server to explore global COVID 19 data.
+
+SELECT *
+FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+ORDER BY 3,4
+
+--SELECT *
+--FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Vaccinations`
+--ORDER BY 3,4
+
+--Selecting Data that is going to be used 
+--Shows likelihood of dying if you contract Covid in India
+SELECT continent, location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS death_percentage
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+WHERE location like '%India%'
+ORDER BY 1,2
+
+
+--Looking at Total Cases vs Population 
+--Shows what percentage of the population in India has gotten COVID
+SELECT continent, location, date,population, total_cases, (total_cases/population)*100 AS covid_rate
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+WHERE location like '%India%'
+ORDER BY 1,2
+
+--Countries with highest infection rate compared to population
+
+SELECT continent, location, population, MAX(total_cases) AS Highest_Infection_Count,MAX((total_cases/population)*100) AS percentage_of_population_infected
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+GROUP BY continent, location,population
+ORDER BY percentage_of_population_infected DESC 
+
+--Breaking things down by Continent - Continents with highest death count 
+
+SELECT location, MAX(total_deaths) AS Total_Death_Counts
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+WHERE continent is NULL 
+GROUP BY location
+ORDER BY Total_Death_Counts DESC
+
+--countries with highest death count per population
+SELECT continent, location, MAX(total_deaths) AS Total_Death_Counts
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+WHERE continent is not NULL 
+GROUP BY continent, location
+ORDER BY Total_Death_Counts DESC
+
+--GLOBAL NUMBERS
+
+SELECT date, SUM(new_cases) AS COVID_Cases, SUM(new_deaths) AS Covid_Deaths, SUM(new_deaths)/SUM(new_cases) AS death_percentage
+FROM  `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths`
+WHERE continent IS NOT null 
+GROUP BY date
+ORDER BY 1,2
+
+--Covid Vaccinations Table exploration
+
+SELECT *
+FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Vaccinations`
+
+--Joining the Covid Deaths and Covid Vaccination Tables
+
+SELECT *
+FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Vaccinations` vac
+JOIN `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths` dea
+ON vac.location = dea.location
+and vac.date = dea.date
+
+--Looking at Total Population vs Vaccinations 
+
+SELECT dea.continent, dea.location, dea.date, vac.new_vaccinations
+FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Vaccinations` vac
+JOIN `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths` dea
+ON vac.location = dea.location 
+and vac.date = dea.date
+WHERE dea.continent is not NULL
+ORDER BY 2,3
+
+--Looking at Total Population vs Vaccinations with a rolling count
+
+SELECT dea.continent, dea.location, dea.date, vac.new_vaccinations, SUM(vac.new_vaccinations) OVER (partition by dea.location ORDER BY dea.location,dea.date) AS Rolling_Count_People_Vaccinated
+FROM `my-first-sandbox-project-1798.Covid_Data.Covid_Vaccinations` vac
+JOIN `my-first-sandbox-project-1798.Covid_Data.Covid_Deaths` dea
+ON vac.location = dea.location 
+and vac.date = dea.date
+WHERE dea.continent is not NULL
+ORDER BY 2,3
